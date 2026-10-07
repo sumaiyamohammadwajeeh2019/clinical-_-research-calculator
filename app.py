@@ -1,0 +1,118 @@
+from flask import Flask, render_template_string, request, jsonify
+import os
+import json
+
+app = Flask(__name__)
+
+# --- YOUR HTML CODE (Physiology Pro) ---
+HTML_CODE = """
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Physiology Pro</title>
+<link rel="manifest" href="/static/manifest.json">
+<meta name="theme-color" content="#0b3d91">
+<style>
+:root{--b:#0b3d91}
+*{font-family:system-ui,Arial,sans-serif;box-sizing:border-box}
+body{background:#eef2f7;padding:6px;margin:0}
+.p{background:#fff;max-width:900px;margin:auto;border-radius:12px;padding:14px;box-shadow:0 4px 15px rgba(0,0,0,.08)}
+.h{background:linear-gradient(135deg,#0b3d91,#2563eb);color:#fff;padding:14px;border-radius:10px;margin:-14px -14px 12px -14px;text-align:center}
+label{font-size:9px;font-weight:800;color:#334155;display:block;margin-top:8px;text-transform:uppercase}
+input,select{width:100%;padding:8px;border:1.5px solid #cbd5e1;border-radius:7px;font-size:13px;margin-top:2px}
+.s{background:#eef6ff;border-left:4px solid var(--b);padding:6px 10px;font-weight:800;color:var(--b);margin:14px 0 8px 0;font-size:11px;border-radius:0 6px 6px 0}
+.r{display:flex;gap:8px;flex-wrap:wrap}.r>div{flex:1;min-width:120px}
+.box{border:2px solid #e2e8f0;border-radius:10px;padding:10px;text-align:center;flex:1;min-width:140px;background:#fff}
+.val{font-size:20px;font-weight:900}
+.badge{font-size:9px;padding:3px 8px;border-radius:20px;font-weight:700;display:inline-block}
+</style></head><body><div class="p">
+<div class="h"><h2 style="margin:0">Physiology Pro - GP Calculator</h2><p style="margin:4px 0 0 0;font-size:10px;opacity:.9">MAP | BSA | Shock Index | Pulse Pressure | GFR | CrCl | Fluid | BMI | Anion Gap | Corrected Ca</p></div>
+<div class="s">INPUTS - Auto Calculate</div>
+<div class="r">
+<div><label>BP ex: 120/80</label><input id="bp" placeholder="120/80" oninput="calc()"></div>
+<div><label>Pulse HR</label><input id="hr" type="number" placeholder="80" oninput="calc()"></div>
+<div><label>Weight kg</label><input id="wt" type="number" placeholder="65" oninput="calc()"></div>
+<div><label>Height cm</label><input id="ht" type="number" placeholder="170" oninput="calc()"></div>
+<div><label>Age</label><input id="age" type="number" placeholder="40" oninput="calc()"></div>
+<div><label>Sex</label><select id="sex" onchange="calc()"><option>Male</option><option>Female</option></select></div>
+</div>
+<div class="r">
+<div><label>Creatinine mg/dL</label><input id="cr" type="number" step="0.1" placeholder="1.0" oninput="calc()"></div>
+<div><label>Na mEq/L</label><input id="na" type="number" placeholder="140" oninput="calc()"></div>
+<div><label>Cl mEq/L</label><input id="cl" type="number" placeholder="100" oninput="calc()"></div>
+<div><label>HCO3 mEq/L</label><input id="hco3" type="number" placeholder="24" oninput="calc()"></div>
+<div><label>Albumin g/dL</label><input id="alb" type="number" placeholder="4.0" oninput="calc()"></div>
+<div><label>Ca mg/dL</label><input id="ca" type="number" placeholder="9.5" oninput="calc()"></div>
+</div>
+<div class="r">
+<div><label>BUN mg/dL</label><input id="bun" type="number" placeholder="15" oninput="calc()"></div>
+<div><label>Glucose mg/dL</label><input id="glu" type="number" placeholder="100" oninput="calc()"></div>
+<div><label>Stroke Volume mL</label><input id="sv" type="number" value="70" oninput="calc()"></div>
+</div>
+<div class="s">1. VITAL CALCULATORS</div>
+<div class="r">
+<div class="box" style="border-color:#f59e0b"><div style="font-size:9px;font-weight:800">MAP</div><div id="mapV" class="val" style="color:#d97706">-- mmHg</div><div id="mapB" class="badge" style="background:#fef3c7">Formula: (SBP+2DBP)/3</div></div>
+<div class="box" style="border-color:#0ea5e9"><div style="font-size:9px;font-weight:800">PULSE PRESSURE</div><div id="ppV" class="val" style="color:#0b3d91">-- mmHg</div><div id="ppB" class="badge" style="background:#e0f2fe">SBP-DBP | N:40-60</div></div>
+<div class="box" style="border-color:#ef4444"><div style="font-size:9px;font-weight:800">SHOCK INDEX</div><div id="siV" class="val" style="color:#dc2626">--</div><div id="siB" class="badge" style="background:#fee2e2">HR/SBP | <0.7 N, >1 Shock</div></div>
+<div class="box" style="border-color:#0891b2"><div style="font-size:9px;font-weight:800">CARDIAC OUTPUT</div><div id="coV" class="val" style="color:#0891b2">-- L/min</div><div class="badge" style="background:#cffafe">HR × SV</div></div>
+</div>
+<div class="s">2. BODY CALCULATORS</div>
+<div class="r">
+<div class="box" style="border-color:#16a34a"><div style="font-size:9px;font-weight:800">BSA</div><div id="bsaV" class="val" style="color:#16a34a">-- m²</div><div class="badge" style="background:#dcfce7">√(H×W/3600)</div></div>
+<div class="box" style="border-color:#7c3aed"><div style="font-size:9px;font-weight:800">BMI</div><div id="bmiV" class="val">--</div><div id="bmiB" class="badge" style="background:#ede9fe">--</div></div>
+<div class="box" style="border-color:#ea580c"><div style="font-size:9px;font-weight:800">FLUID (4-2-1)</div><div id="fluidV" class="val" style="color:#ea580c">-- mL/hr</div><div id="fluidB" class="badge" style="background:#ffedd5">-- /day</div></div>
+<div class="box" style="border-color:#7c3aed"><div style="font-size:9px;font-weight:800">IBW Devine</div><div id="ibwV" class="val" style="color:#7c3aed">-- kg</div><div class="badge" style="background:#ede9fe">Ideal Weight</div></div>
+</div>
+<div class="s">3. KIDNEY + ELECTROLYTE</div>
+<div class="r">
+<div class="box" style="border-color:#7c3aed;background:#f5f3ff"><div style="font-size:9px;font-weight:800">eGFR / CrCl</div><div id="gfrV" class="val" style="color:#7c3aed">-- mL/min</div><div id="gfrB" class="badge" style="background:#ede9fe">Cockcroft-Gault</div></div>
+<div class="box" style="border-color:#0891b2"><div style="font-size:9px;font-weight:800">ANION GAP</div><div id="agV" class="val">--</div><div id="agB" class="badge" style="background:#cffafe">Na-(Cl+HCO3)</div></div>
+<div class="box" style="border-color:#16a34a"><div style="font-size:9px;font-weight:800">CORRECTED CALCIUM</div><div id="caV" class="val" style="color:#16a34a">--</div><div class="badge" style="background:#dcfce7">Ca+0.8×(4-Alb)</div></div>
+<div class="box" style="border-color:#0e7490"><div style="font-size:9px;font-weight:800">OSMOLALITY</div><div id="osmV" class="val">--</div><div class="badge" style="background:#ccfbf1">2Na+Glu/18+BUN/2.8</div></div>
+</div>
+<div class="s">INTERPRETATION</div>
+<div id="interp" style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:8px;padding:10px;font-size:11px;line-height:1.6">Enter BP as 120/80 to start auto calculation...</div>
+<div style="text-align:center;margin-top:12px"><button onclick="window.print()" style="padding:8px 14px;border:none;background:#e2e8f0;border-radius:6px;font-weight:700">Print</button> <button onclick="location.reload()" style="padding:8px 14px;border:none;background:var(--b);color:#fff;border-radius:6px;font-weight:700">Reset</button></div>
+</div><script>
+function calc(){
+let bp=document.getElementById('bp').value,hr=parseFloat(document.getElementById('hr').value),wt=parseFloat(document.getElementById('wt').value),ht=parseFloat(document.getElementById('ht').value),age=parseFloat(document.getElementById('age').value),cr=parseFloat(document.getElementById('cr').value),sex=document.getElementById('sex').value,sv=parseFloat(document.getElementById('sv').value)||70,na=parseFloat(document.getElementById('na').value),cl=parseFloat(document.getElementById('cl').value),hco3=parseFloat(document.getElementById('hco3').value),alb=parseFloat(document.getElementById('alb').value),ca=parseFloat(document.getElementById('ca').value),bun=parseFloat(document.getElementById('bun').value),glu=parseFloat(document.getElementById('glu').value);
+let sbp=0,dbp=0;if(bp.includes('/')){let a=bp.split('/');sbp=parseFloat(a[0]);dbp=parseFloat(a[1]);}
+if(sbp&&dbp){
+let map=((sbp+2*dbp)/3).toFixed(1);document.getElementById('mapV').textContent=map+' mmHg';document.getElementById('mapB').textContent=map<70?'Low ⚠️ Hypo - <70':map<=100?'Normal ✅ 70-100':'High ⚠️ >100';
+let pp=sbp-dbp;document.getElementById('ppV').textContent=pp+' mmHg';document.getElementById('ppB').textContent=pp<30?'Narrow ⚠️ <30':pp<=60?'Normal ✅ 40-60':'Wide ⚠️ >60';
+if(hr&&sbp){let si=(hr/sbp).toFixed(2);document.getElementById('siV').textContent=si;document.getElementById('siB').textContent=si<0.7?'Normal ✅ <0.7':si<1?'Borderline ⚠️ 0.7-1':'SHOCK ⚠️ >1';}
+}
+if(hr){document.getElementById('coV').textContent=(hr*sv/1000).toFixed(2)+' L/min';}
+if(wt&&ht){
+let bsa=Math.sqrt((ht*wt)/3600).toFixed(2);document.getElementById('bsaV').textContent=bsa+' m²';
+let bmi=(wt/((ht/100)*(ht/100))).toFixed(1);document.getElementById('bmiV').textContent=bmi;let bb=document.getElementById('bmiB');if(bmi<18.5)bb.textContent='Underweight';else if(bmi<25)bb.textContent='Normal ✅';else if(bmi<30)bb.textContent='Overweight ⚠️';else bb.textContent='Obese ❌';
+let fluid=wt<=10?wt*4:wt<=20?40+(wt-10)*2:60+(wt-20)*1;document.getElementById('fluidV').textContent=fluid+' mL/hr';document.getElementById('fluidB').textContent=(fluid*24)+' mL/day';
+let ibw=sex==='Male'?50+0.91*(ht-152.4):45.5+0.91*(ht-152.4);document.getElementById('ibwV').textContent=ibw.toFixed(1)+' kg';
+}
+if(cr&&age&&wt){let crcl=((140-age)*wt/(72*cr))*(sex==='Female'?0.85:1);document.getElementById('gfrV').textContent=crcl.toFixed(1)+' mL/min';let gb=document.getElementById('gfrB');if(crcl>=90)gb.textContent='G1 Normal ✅ >90';else if(crcl>=60)gb.textContent='G2 Mild ↓ 60-89';else if(crcl>=45)gb.textContent='G3a Mild-Mod ↓';else if(crcl>=30)gb.textContent='G3b Mod-Sev ⚠️';else if(crcl>=15)gb.textContent='G4 Severe ❌';else gb.textContent='G5 Failure ❌ <15';}
+if(na&&cl&&hco3){let ag=na-(cl+hco3);document.getElementById('agV').textContent=ag+' mEq/L';document.getElementById('agB').textContent=ag>16?'High Gap ⚠️ >16':ag<8?'Low <8':'Normal ✅ 8-16';}
+if(ca&&alb){document.getElementById('caV').textContent=(ca+0.8*(4-alb)).toFixed(2)+' mg/dL';}
+if(na&&bun&&glu){document.getElementById('osmV').textContent=(2*na+glu/18+bun/2.8).toFixed(1)+' mOsm/kg';}
+let t='';if(sbp&&dbp)t+=`BP ${sbp}/${dbp} → MAP ${document.getElementById('mapV').textContent}, PP ${document.getElementById('ppV').textContent}, SI ${document.getElementById('siV').textContent}<br>`;if(wt&&ht)t+=`BSA ${document.getElementById('bsaV').textContent} | BMI ${document.getElementById('bmiV').textContent} | Fluid ${document.getElementById('fluidV').textContent}<br>`;if(cr)t+=`Kidney: ${document.getElementById('gfrV').textContent} - ${document.getElementById('gfrB').textContent}<br>`;document.getElementById('interp').innerHTML=t||'Enter values...';
+}
+if('serviceWorker' in navigator){navigator.serviceWorker.register('/static/service-worker.js');}
+</script></body></html>
+"""
+
+@app.route('/')
+def home():
+    return render_template_string(HTML_CODE)
+
+@app.route('/static/<path:path>')
+def serve_static(path):
+    return send_from_directory('static', path)
+
+@app.route('/api/calculate', methods=['POST'])
+def api_calculate():
+    # For future API use with JSON
+    from flask import request, jsonify
+    data = request.get_json()
+    return jsonify({"status": "ok", "data": data})
+
+if __name__ == '__main__':
+    # Local run
+    app.run(debug=True,port=5000)

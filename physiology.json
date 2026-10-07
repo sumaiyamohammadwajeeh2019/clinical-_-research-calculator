@@ -1,0 +1,123 @@
+[
+  {
+    "id": "map",
+    "name": "Mean Arterial Pressure (MAP)",
+    "formula": "(SBP + 2*DBP) / 3",
+    "unit": "mmHg",
+    "inputs": ["SBP", "DBP"],
+    "normal_range": "70-100",
+    "interpretation": {
+      "low": "<70 = Hypotension - Low organ perfusion",
+      "normal": "70-100 = Normal",
+      "high": ">100 = High MAP - Hypertension risk"
+    }
+  },
+  {
+    "id": "pulse_pressure",
+    "name": "Pulse Pressure",
+    "formula": "SBP - DBP",
+    "unit": "mmHg",
+    "normal_range": "40-60",
+    "interpretation": {
+      "narrow": "<30 = Narrow - Shock, Aortic Stenosis",
+      "normal": "40-60 = Normal",
+      "wide": ">60 = Wide - Aortic Regurgitation, Hyperthyroidism"
+    }
+  },
+  {
+    "id": "shock_index",
+    "name": "Shock Index",
+    "formula": "HR / SBP",
+    "unit": "ratio",
+    "normal_range": "<0.7",
+    "interpretation": {
+      "normal": "<0.7 = Normal",
+      "borderline": "0.7-1.0 = Borderline - Observe",
+      "shock": ">1.0 = SHOCK - Immediate action"
+    }
+  },
+  {
+    "id": "cardiac_output",
+    "name": "Cardiac Output",
+    "formula": "HR * Stroke Volume / 1000",
+    "unit": "L/min",
+    "normal_range": "4-8",
+    "inputs": ["HR", "SV"]
+  },
+  {
+    "id": "bsa",
+    "name": "Body Surface Area",
+    "formula": "sqrt(Height(cm) * Weight(kg) / 3600)",
+    "unit": "m²",
+    "method": "Mosteller"
+  },
+  {
+    "id": "bmi",
+    "name": "Body Mass Index",
+    "formula": "Weight(kg) / (Height(m))^2",
+    "unit": "kg/m2",
+    "normal_range": "18.5-24.9",
+    "interpretation": {
+      "underweight": "<18.5",
+      "normal": "18.5-24.9",
+      "overweight": "25-29.9",
+      "obese": ">=30"
+    }
+  },
+  {
+    "id": "fluid_421",
+    "name": "Maintenance Fluid (4-2-1 Rule)",
+    "formula": "10kg:4ml/kg, 10-20kg:40+2ml/kg, >20kg:60+1ml/kg",
+    "unit": "mL/hr",
+    "inputs": ["Weight"]
+  },
+  {
+    "id": "ibw",
+    "name": "Ideal Body Weight - Devine",
+    "formula": "Male: 50+0.91*(Ht-152.4), Female: 45.5+0.91*(Ht-152.4)",
+    "unit": "kg",
+    "inputs": ["Height", "Sex"]
+  },
+  {
+    "id": "egfr_cockcroft",
+    "name": "Creatinine Clearance - Cockcroft-Gault",
+    "formula": "((140-Age)*Weight/(72*Cr)) * (0.85 if Female)",
+    "unit": "mL/min",
+    "normal_range": ">90",
+    "stages": {
+      "G1": ">90 Normal",
+      "G2": "60-89 Mild decrease",
+      "G3a": "45-59 Mild-Moderate",
+      "G3b": "30-44 Moderate-Severe",
+      "G4": "15-29 Severe",
+      "G5": "<15 Kidney Failure"
+    }
+  },
+  {
+    "id": "anion_gap",
+    "name": "Anion Gap",
+    "formula": "Na - (Cl + HCO3)",
+    "unit": "mEq/L",
+    "normal_range": "8-16",
+    "interpretation": {
+      "normal": "8-16 = Normal",
+      "high": ">16 = High Gap Metabolic Acidosis (DKA, Lactic Acidosis)",
+      "low": "<8 = Low"
+    }
+  },
+  {
+    "id": "corrected_calcium",
+    "name": "Corrected Calcium",
+    "formula": "Ca + 0.8 * (4 - Albumin)",
+    "unit": "mg/dL",
+    "inputs": ["Ca", "Albumin"],
+    "normal_range": "8.5-10.5"
+  },
+  {
+    "id": "osmolality",
+    "name": "Serum Osmolality",
+    "formula": "2*Na + Glucose/18 + BUN/2.8",
+    "unit": "mOsm/kg",
+    "normal_range": "275-295"
+  }
+]
