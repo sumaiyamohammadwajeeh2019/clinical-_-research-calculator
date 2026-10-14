@@ -119,5 +119,44 @@
     "formula": "2*Na + Glucose/18 + BUN/2.8",
     "unit": "mOsm/kg",
     "normal_range": "275-295"
+  },
+  {
+    "id": "ldl_friedewald",
+    "name": "LDL Cholesterol - Friedewald",
+    "formula": "TC - HDL - TG/5",
+    "unit": "mg/dL",
+    "inputs": ["TC", "HDL", "TG"],
+    "normal_range": "<100 optimal",
+    "note": "Invalid if TG>400 - use direct LDL",
+    "interpretation": {
+      "optimal": "<100",
+      "near_optimal": "100-129",
+      "borderline": "130-159",
+      "high": "160-189",
+      "very_high": ">=190"
+    }
+  },
+  {
+    "id": "vldl",
+    "name": "VLDL Cholesterol",
+    "formula": "TG/5",
+    "unit": "mg/dL",
+    "inputs": ["TG"],
+    "normal_range": "TG <150"
+  },
+  {
+    "id": "non_hdl",
+    "name": "Non-HDL Cholesterol",
+    "formula": "TC - HDL",
+    "unit": "mg/dL",
+    "inputs": ["TC", "HDL"],
+    "normal_range": "<130 optimal"
+  },
+  {
+    "id": "tc_hdl_ratio",
+    "name": "TC/HDL Ratio",
+    "formula": "TC / HDL",
+    "unit": "ratio",
+    "normal_range": "<3.5 ideal"
   }
 ]

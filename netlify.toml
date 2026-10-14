@@ -1,0 +1,8 @@
+[build]
+  publish = "."
+[build.environment]
+  PYTHON_VERSION = "3.11"
+[[headers]]
+  for = "/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
