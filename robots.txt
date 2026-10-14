@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://clinical-research-variables-calculator.onrender.com/sitemap.xml
